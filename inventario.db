@@ -1,48 +1,19 @@
 import sqlite3
 
 # Función para conectar a la base de datos
-def conectar_db():
-    return sqlite3.connect("inventario.db")
 
-# Función para inicializar la base de datos
-def inicializar_bd():
-    try:
-        conn = conectar_db()
-        cursor = conn.cursor()
-        # Crear la tabla celulares con la columna stock
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS celulares (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                marca TEXT NOT NULL,
-                modelo TEXT NOT NULL,
-                almacenamiento TEXT NOT NULL,
-                precio REAL NOT NULL,
-                stock INTEGER NOT NULL DEFAULT 0,  # Nueva columna para el stock
-                UNIQUE(marca, modelo, almacenamiento)
-            )
-        ''')
-        conn.commit()
-        print("Tabla 'celulares' creada correctamente.")
-    except sqlite3.Error as e:
-        print(f"Error al inicializar la base de datos: {e}")
-    finally:
-        if conn:
-            conn.close()
-
-# Función para insertar datos de ejemplo
-def insertar_datos():
     productos_celulares = [
-        # (marca, modelo, almacenamiento, precio, stock)
-        ("Samsung", "Galaxy S23", "128GB", 799.99, 5),
-        ("Apple", "iPhone 15", "256GB", 999.99, 3),
-        ("Xiaomi", "Redmi Note 12", "128GB", 299.99, 10),
-        ("Google", "Pixel 7", "128GB", 599.99, 7),
-        ("OnePlus", "OnePlus 11", "256GB", 699.99, 4),
-        ("Samsung", "Galaxy Z Fold 4", "256GB", 1799.99, 3),
-        ("Apple", "iPhone 14 Pro", "512GB", 1199.99, 6),
-        ("Xiaomi", "Mi 11 Lite", "128GB", 349.99, 8),
-        ("Google", "Pixel 6a", "128GB", 449.99, 9),
-        ("Motorola", "Moto G Power", "64GB", 249.99, 12)
+        # (marca, modelo, almacenamiento, precio, stock, caracteristicas)
+        ("Samsung", "Galaxy S23", "128GB", 799.99, 5, "128GB, 8GB RAM, cámara triple de 50MP, batería de 3900mAh, 5G"),
+        ("Apple", "iPhone 15", "256GB", 999.99, 3, "256GB, 6GB RAM, cámara dual de 48MP, batería de 3349mAh, 5G"),
+        ("Xiaomi", "Redmi Note 12", "128GB", 299.99, 10, "128GB, 6GB RAM, cámara triple de 50MP, batería de 5000mAh, 4G"),
+        ("Google", "Pixel 7", "128GB", 599.99, 7, "128GB, 8GB RAM, cámara dual de 50MP, batería de 4355mAh, 5G"),
+        ("OnePlus", "OnePlus 11", "256GB", 699.99, 4, "256GB, 12GB RAM, cámara triple de 50MP, batería de 5000mAh, 5G"),
+        ("Samsung", "Galaxy Z Fold 4", "256GB", 1799.99, 3, "256GB, 12GB RAM, cámara triple de 50MP, batería de 4400mAh, 5G, pantalla plegable"),
+        ("Apple", "iPhone 14 Pro", "512GB", 1199.99, 6, "512GB, 6GB RAM, cámara triple de 48MP, batería de 3200mAh, 5G, pantalla Dynamic Island"),
+        ("Xiaomi", "Mi 11 Lite", "128GB", 349.99, 8, "128GB, 6GB RAM, cámara triple de 64MP, batería de 4250mAh, 5G"),
+        ("Google", "Pixel 6a", "128GB", 449.99, 9, "128GB, 6GB RAM, cámara dual de 12MP, batería de 4410mAh, 5G"),
+        ("Motorola", "Moto G Power", "64GB", 249.99, 12, "64GB, 4GB RAM, cámara triple de 50MP, batería de 5000mAh, 4G")
     ]
     
     try:
@@ -52,8 +23,8 @@ def insertar_datos():
         cursor.execute("SELECT COUNT(*) FROM celulares")
         count = cursor.fetchone()[0]
         if count == 0:
-            # Insertar datos con el stock
-            cursor.executemany("INSERT INTO celulares (marca, modelo, almacenamiento, precio, stock) VALUES (?, ?, ?, ?, ?)", productos_celulares)
+            # Insertar datos con el stock y características
+            cursor.executemany("INSERT INTO celulares (marca, modelo, almacenamiento, precio, stock, caracteristicas) VALUES (?, ?, ?, ?, ?, ?)", productos_celulares)
             conn.commit()
             print("Datos de ejemplo insertados correctamente.")
         else:
