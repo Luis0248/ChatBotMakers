@@ -1,7 +1,7 @@
 1. Clonar el Repositorio
 
 Si aún no tienes el proyecto clonado en tu máquina local, usa el siguiente comando:
-git clone [https://github.com/tu-usuario/tu-repositorio.git](https://github.com/Luis0248/ChatBotMakers.git)
+git clone (https://github.com/Luis0248/ChatBotMakers.git)
 
 2. Configuración del Backend (Flask)
 
