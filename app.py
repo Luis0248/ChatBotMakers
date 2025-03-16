@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
-import openai  # Importar la biblioteca de OpenAI
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventario.db'
@@ -9,9 +8,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
-
-# Configurar la API Key de OpenAI
-openai.api_key = "tu_nueva_api_key"  # Reemplaza con tu nueva API Key
 
 # Modelo de la base de datos
 class Producto(db.Model):
@@ -38,13 +34,18 @@ with app.app_context():
 
     # Verificar si la tabla ya tiene datos
     if Producto.query.count() == 0:
-        productos_ejemplo = productos_ejemplo = [
-    Producto(categoria="Celular", marca="Samsung", modelo="Galaxy S23", precio=799.99, caracteristicas="128GB, buena cámara, 5G"),
-    Producto(categoria="Celular", marca="Apple", modelo="iPhone 15", precio=999.99, caracteristicas="256GB, excelente cámara, 5G"),
-    Producto(categoria="Celular", marca="Xiaomi", modelo="Redmi Note 12", precio=299.99, caracteristicas="128GB, buena cámara, 4G"),
-    Producto(categoria="Celular", marca="Google", modelo="Pixel 7", precio=599.99, caracteristicas="128GB, excelente cámara, 5G"),
-    Producto(categoria="Celular", marca="OnePlus", modelo="OnePlus 11", precio=699.99, caracteristicas="256GB, buena cámara, 5G"),
-]
+        productos_ejemplo = [
+            Producto(categoria="Celular", marca="Samsung", modelo="Galaxy S23", precio=799.99, caracteristicas="128GB, 8GB RAM, cámara triple de 50MP, batería de 3900mAh, 5G"),
+            Producto(categoria="Celular", marca="Apple", modelo="iPhone 15", precio=999.99, caracteristicas="256GB, 6GB RAM, cámara dual de 48MP, batería de 3349mAh, 5G"),
+            Producto(categoria="Celular", marca="Xiaomi", modelo="Redmi Note 12", precio=299.99, caracteristicas="128GB, 6GB RAM, cámara triple de 50MP, batería de 5000mAh, 4G"),
+            Producto(categoria="Celular", marca="Google", modelo="Pixel 7", precio=599.99, caracteristicas="128GB, 8GB RAM, cámara dual de 50MP, batería de 4355mAh, 5G"),
+            Producto(categoria="Celular", marca="OnePlus", modelo="OnePlus 11", precio=699.99, caracteristicas="256GB, 12GB RAM, cámara triple de 50MP, batería de 5000mAh, 5G"),
+            Producto(categoria="Celular", marca="Samsung", modelo="Galaxy Z Fold 4", precio=1799.99, caracteristicas="256GB, 12GB RAM, cámara triple de 50MP, batería de 4400mAh, 5G, pantalla plegable"),
+            Producto(categoria="Celular", marca="Apple", modelo="iPhone 14 Pro", precio=1199.99, caracteristicas="512GB, 6GB RAM, cámara triple de 48MP, batería de 3200mAh, 5G, pantalla Dynamic Island"),
+            Producto(categoria="Celular", marca="Xiaomi", modelo="Mi 11 Lite", precio=349.99, caracteristicas="128GB, 6GB RAM, cámara triple de 64MP, batería de 4250mAh, 5G"),
+            Producto(categoria="Celular", marca="Google", modelo="Pixel 6a", precio=449.99, caracteristicas="128GB, 6GB RAM, cámara dual de 12MP, batería de 4410mAh, 5G"),
+            Producto(categoria="Celular", marca="Motorola", modelo="Moto G Power", precio=249.99, caracteristicas="64GB, 4GB RAM, cámara triple de 50MP, batería de 5000mAh, 4G")
+        ]
         db.session.bulk_save_objects(productos_ejemplo)
         db.session.commit()
         print("Datos de ejemplo insertados con éxito.")
@@ -59,23 +60,6 @@ def buscar_productos(categoria=None, marca=None):
     productos = [producto.to_dict() for producto in query.all()]
     print("Productos encontrados:", productos)  # Depuración
     return productos
-
-# Función para generar una respuesta usando OpenAI
-def generar_respuesta_openai(mensaje):
-    try:
-        print("Enviando solicitud a OpenAI...")  # Depuración
-        respuesta = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Usar GPT-3.5-turbo
-            messages=[
-                {"role": "system", "content": "Eres un asistente virtual útil."},
-                {"role": "user", "content": mensaje}
-            ]
-        )
-        print("Respuesta de OpenAI recibida:", respuesta)  # Depuración
-        return respuesta['choices'][0]['message']['content'].strip()
-    except Exception as e:
-        print(f"Error al generar respuesta con OpenAI: {e}")  # Depuración
-        return "Lo siento, hubo un error al procesar tu solicitud."
 
 # Función de respuesta del ChatBot
 def responder_usuario(mensaje):
@@ -112,39 +96,19 @@ def responder_usuario(mensaje):
         return "No encontré ese producto. ¿Puedes proporcionar más detalles?"
 
     # Consultar características específicas de un celular
-    if any(palabra in mensaje for palabra in ["características", "especificaciones", "detalles"]):
-        for producto in buscar_productos(categoria="Celular"):
-            if producto["marca"].lower() in mensaje or producto["modelo"].lower() in mensaje:
-                return f"Las características del {producto['marca']} {producto['modelo']} son: {producto['caracteristicas']}."
-        return "No encontré ese celular. ¿Puedes proporcionar más detalles?"
-
-    # Recomendar celulares según necesidades
-    if any(palabra in mensaje for palabra in ["recomendar", "recomiéndame", "sugerir"]):
-        if "almacenamiento" in mensaje or "espacio" in mensaje:
-            productos = buscar_productos(categoria="Celular")
-            recomendados = [p for p in productos if "256gb" in p["caracteristicas"].lower()]
-            if recomendados:
-                detalles = "\n".join([f"{p['marca']} {p['modelo']} (${p['precio']})" for p in recomendados])
-                return f"Te recomiendo estos celulares con buen almacenamiento:\n{detalles}"
-            else:
-                return "No encontré celulares con buen almacenamiento."
-        elif "cámara" in mensaje or "fotos" in mensaje:
-            productos = buscar_productos(categoria="Celular")
-            recomendados = [p for p in productos if "buena cámara" in p["caracteristicas"].lower()]
-            if recomendados:
-                detalles = "\n".join([f"{p['marca']} {p['modelo']} (${p['precio']})" for p in recomendados])
-                return f"Te recomiendo estos celulares con buena cámara:\n{detalles}"
-            else:
-                return "No encontré celulares con buena cámara."
-        else:
-            return "¿Qué tipo de celular estás buscando? Por ejemplo, ¿uno con buen almacenamiento o buena cámara?"
+    for producto in buscar_productos(categoria="Celular"):
+        # Normalizar el mensaje y los nombres de los productos
+        marca_normalizada = producto["marca"].lower()
+        modelo_normalizado = producto["modelo"].lower()
+        if marca_normalizada in mensaje or modelo_normalizado in mensaje:
+            return f"Las características del {producto['marca']} {producto['modelo']} son: {producto['caracteristicas']}."
 
     # Despedida
     if any(palabra in mensaje for palabra in ["adiós", "chao", "hasta luego", "salir"]):
         return "¡Gracias por usar nuestro servicio! Hasta luego."
 
-    # Respuesta por defecto: Usar OpenAI para generar una respuesta
-    return generar_respuesta_openai(mensaje)
+    # Respuesta por defecto
+    return "No entendí tu pregunta. ¿Puedes ser más específico?"
 
 # Rutas de la API
 @app.route("/")
